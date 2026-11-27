@@ -83,7 +83,8 @@ namespace VoidStunts.EditorTools
             for (int i = 0; i < QualitySettings.names.Length; i++) { QualitySettings.SetQualityLevel(i, false); QualitySettings.renderPipeline = urp; }
             QualitySettings.SetQualityLevel(QualitySettings.names.Length - 1, false);
             QualitySettings.vSyncCount = 0; QualitySettings.antiAliasing = 0;
-            var ensure = typeof(UniversalRenderPipelineGlobalSettings).GetMethod("Ensure", BindingFlags.NonPublic | BindingFlags.Static);
+            var gsType = typeof(UniversalRenderPipelineAsset).Assembly.GetType("UnityEngine.Rendering.Universal.UniversalRenderPipelineGlobalSettings"); // internal in URP 17.3
+            var ensure = gsType?.GetMethod("Ensure", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
             try { ensure?.Invoke(null, new object[] { true }); } catch (Exception e) { Debug.LogWarning("URP global settings: " + e.Message); }
 
             ConfigurePlayer();
