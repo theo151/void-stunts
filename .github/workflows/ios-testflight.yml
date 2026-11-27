@@ -51,7 +51,7 @@ jobs:
 
       - uses: buildalon/unity-setup@v2
         with:
-          unity-version: 6000.3.29f1   # pinned here: version-file needs a changeset line that ProjectVersion.txt lacks
+          unity-version: 6000.3.29f1   # must match ProjectSettings/ProjectVersion.txt
           build-targets: iOS
           cache-installation: true
 
