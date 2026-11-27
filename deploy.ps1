@@ -24,7 +24,9 @@ function SetSecret($name, $value) {
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = (Get-Command gh).Source; $psi.Arguments = "secret set $name --repo $repo"
     $psi.UseShellExecute = $false; $psi.RedirectStandardInput = $true; $psi.CreateNoWindow = $true
-    $p = [System.Diagnostics.Process]::Start($psi); $p.StandardInput.Write($value); $p.StandardInput.Close(); $p.WaitForExit()
+    # raw UTF-8 bytes straight to the pipe: Windows PowerShell would otherwise re-encode non-ASCII letters (ae/oe/aa) and may add a BOM
+    $p = [System.Diagnostics.Process]::Start($psi); $bytes = (New-Object System.Text.UTF8Encoding($false)).GetBytes($value)
+    $p.StandardInput.BaseStream.Write($bytes, 0, $bytes.Length); $p.StandardInput.BaseStream.Flush(); $p.StandardInput.BaseStream.Close(); $p.WaitForExit()
     if ($p.ExitCode -ne 0) { Fail "Could not store the secret $name." }
 }
 function Run { param([string]$exe, [string[]]$a) & $exe @a; if ($LASTEXITCODE -ne 0) { Fail ("'$exe $($a -join ' ')' failed (exit $LASTEXITCODE).") } }
@@ -102,6 +104,13 @@ if ($setUnity) {
     $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec)
     $uPass = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr); [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
     if (-not $uPass) { Fail 'No Unity password given.' }
+    $sec2 = Read-Host '  Type the password again (hidden)' -AsSecureString
+    $b2 = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec2); $uPass2 = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($b2); [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($b2)
+    if ($uPass -cne $uPass2) { Fail 'The two passwords did not match. Run DEPLOY.bat again.' }
+    $uPass2 = $null
+    if ($uPass -ne $uPass.Trim()) { Say '  Note: the password starts or ends with a space. That is kept exactly as typed.' 'DarkYellow' }
+    Say ("  Email: " + $uEmail + "   Password: " + $uPass.Length + " characters") 'White'
+    if (-not (YesNo '  Is that right? (You must be able to sign in at id.unity.com with exactly this email + password - not with Google/Apple)')) { Fail 'Cancelled. Run DEPLOY.bat again.' }
     SetSecret 'UNITY_USERNAME' $uEmail
     SetSecret 'UNITY_PASSWORD' $uPass
     $uPass = $null
