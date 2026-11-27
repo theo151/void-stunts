@@ -37,7 +37,12 @@ namespace VoidStunts
             float[] rs = { .78f, .9f, 1f }, sd = { 130, 190, 280 }, vd = { 520, 760, 1100 }, vs = { 80, 150, 230 }; int[] msaa = { 1, 1, 2 };
             if (a != null) { a.renderScale = rs[quality]; a.shadowDistance = sd[quality]; a.msaaSampleCount = msaa[quality]; a.shadowCascadeCount = quality == 0 ? 2 : 4; }
             var rd = Resources.Load<UniversalRendererData>("Rendering/VSRenderer");
-            if (rd != null) foreach (var f in rd.rendererFeatures) if (f != null && f.name.Contains("SSAO")) f.SetActive(quality > 0);
+            #if UNITY_WEBGL
+            bool ao = quality > 1;   // browser: screen-space AO shimmers on WebGL, keep it for the sharpest tier only
+#else
+            bool ao = quality > 0;
+#endif
+            if (rd != null) foreach (var f in rd.rendererFeatures) if (f != null && f.name.Contains("SSAO")) f.SetActive(ao);
             if (veg != null) { veg.drawDistance = vd[quality]; veg.shadowDistance = vs[quality]; veg.lodDistance = new[] { 150f, 230f, 330f }[quality]; }
             Application.targetFrameRate = hz120 ? 120 : 60; QualitySettings.vSyncCount = 0;
             Haptics.enabled = haptics;

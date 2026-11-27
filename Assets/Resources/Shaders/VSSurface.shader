@@ -84,6 +84,9 @@ Shader "VoidStunts/Surface"
             void Facade(float2 fu, float4 prm, float2 fw, inout float3 albedo, inout float rough, inout float metal, inout float3 emission, inout float ao, float3 nWS)
             {
                 if (abs(nWS.y) > 0.5 || prm.x <= 0) return;
+                // keep the untouched wall so far-away facades can fade to a pre-filtered average instead of shimmering
+                float3 albedo0 = albedo; float rough0 = rough, metal0 = metal, ao0 = ao; float3 emission0 = emission;
+                float far = smoothstep(0.12, 0.4, max(fw.x, fw.y)); // window cells smaller than ~3-8 pixels
                 float bay = prm.x, storey = prm.y, seed = prm.z, style = prm.w;
                 float2 cell = floor(float2(fu.x / bay, fu.y / storey));
                 float2 f = float2(frac(fu.x / bay), frac(fu.y / storey));
@@ -106,12 +109,19 @@ Shader "VoidStunts/Surface"
                 float lit = step(h, cell.y < 1 ? 0.75 : 0.22);
                 albedo = lerp(albedo, glass, win);
                 albedo = lerp(albedo, albedo * 0.45, saturate(frame));
-                rough = lerp(rough, lerp(0.06, 0.6, blind), win);
+                rough = lerp(rough, lerp(0.14, 0.6, blind), win); // not mirror-sharp: avoids sparkling highlights
                 metal = lerp(metal, 0.15, win);
                 emission += win * lit * _VS_WindowTint.rgb * _VS_WindowGlow * (0.55 + 0.45 * h2) * (cell.y < 1 ? 1.6 : 1.0);
                 // the wall darkens just under each sill (water and shadow)
                 float sill = VSBox(f, float2(0.15, 0.05), float2(0.85, 0.28), fw) * step(0.5, cell.y);
                 ao *= 1 - sill * 0.25 * (1 - win);
+                // distance: the average of the pattern (about 40% glass, a fifth of rooms lit), no per-window detail
+                float3 glassAvg = float3(0.07, 0.075, 0.085);
+                albedo = lerp(albedo, lerp(albedo0, glassAvg, 0.4) * 0.92, far);
+                rough = lerp(rough, lerp(rough0, 0.35, 0.4), far);
+                metal = lerp(metal, lerp(metal0, 0.15, 0.4), far);
+                ao = lerp(ao, ao0, far);
+                emission = lerp(emission, emission0 + _VS_WindowTint.rgb * _VS_WindowGlow * 0.4 * 0.22 * 0.75, far);
             }
 
             half4 frag(Varyings i, FRONT_FACE_TYPE face : FRONT_FACE_SEMANTIC) : SV_Target

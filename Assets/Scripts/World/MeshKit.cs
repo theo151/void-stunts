@@ -148,7 +148,9 @@ namespace VoidStunts
                 var gn = Vector3.Cross(A1 - A0, B0 - A0);
                 if (Vector3.Dot(gn, nrm[i]) >= 0) { tb.t.AddRange(new[] { i0, i0 + 1, i0 + 2, i0, i0 + 2, i0 + 3 }); }
                 else { tb.t.AddRange(new[] { i0, i0 + 2, i0 + 1, i0, i0 + 3, i0 + 2 }); }
-                int j = capV.Count; capV.AddRange(new[] { A0, A1, B1, B0 }); capT.AddRange(new[] { j, j + 1, j + 2, j, j + 2, j + 3 });
+                int j = capV.Count; capV.AddRange(new[] { A0, A1, B1, B0 });
+                // collider winding must face up too: Unity raycasts (the wheels) ignore back faces of mesh colliders
+                if (Vector3.Dot(gn, nrm[i]) >= 0) capT.AddRange(new[] { j, j + 1, j + 2, j, j + 2, j + 3 }); else capT.AddRange(new[] { j, j + 2, j + 1, j, j + 3, j + 2 });
             }
             // sides, front face and underside down to y = -1
             var prof = new List<Vector2>();
@@ -160,10 +162,21 @@ namespace VoidStunts
             {
                 var want = q * new Vector3(s, 0, 0);
                 for (int k = 0; k < tris.Count; k += 3)
-                    Tri(sideMat, P(s * hw, prof[tris[k]].y, prof[tris[k]].x), P(s * hw, prof[tris[k + 1]].y, prof[tris[k + 1]].x), P(s * hw, prof[tris[k + 2]].y, prof[tris[k + 2]].x), want);
+                {
+                    Vector3 p0 = P(s * hw, prof[tris[k]].y, prof[tris[k]].x), p1 = P(s * hw, prof[tris[k + 1]].y, prof[tris[k + 1]].x), p2 = P(s * hw, prof[tris[k + 2]].y, prof[tris[k + 2]].x);
+                    Tri(sideMat, p0, p1, p2, want);
+                    // sides are solid too, so the car bumps off a ramp's flank instead of sinking into it
+                    int j = capV.Count; capV.AddRange(new[] { p0, p1, p2 });
+                    if (Vector3.Dot(Vector3.Cross(p1 - p0, p2 - p0), want) >= 0) capT.AddRange(new[] { j, j + 1, j + 2 }); else capT.AddRange(new[] { j, j + 2, j + 1 });
+                }
             }
             var last = top[nPts - 1];
-            if (last.y > .05f) Quad(sideMat, P(-hw, -.5f, last.x), P(hw, -.5f, last.x), P(hw, last.y, last.x), P(-hw, last.y, last.x), q * Vector3.forward);
+            if (last.y > .05f)
+            {
+                Quad(sideMat, P(-hw, -.5f, last.x), P(hw, -.5f, last.x), P(hw, last.y, last.x), P(-hw, last.y, last.x), q * Vector3.forward);
+                int j = capV.Count; capV.AddRange(new[] { P(-hw, -.5f, last.x), P(hw, -.5f, last.x), P(hw, last.y, last.x), P(-hw, last.y, last.x) });
+                capT.AddRange(new[] { j, j + 1, j + 2, j, j + 2, j + 3, j, j + 2, j + 1, j, j + 3, j + 2 }); // both windings: solid from either side
+            }
             // collider
             var go = new GameObject(tag); go.transform.SetParent(colliders, false);
             var mesh = new Mesh { indexFormat = IndexFormat.UInt32 }; mesh.SetVertices(capV); mesh.SetTriangles(capT, 0); mesh.RecalculateNormals();

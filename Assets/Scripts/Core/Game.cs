@@ -24,7 +24,7 @@ namespace VoidStunts
         void Awake()
         {
             Settings.Load();
-            Time.fixedDeltaTime = 1 / 120f; Physics.gravity = new Vector3(0, -CarController.G, 0); Physics.defaultSolverIterations = 8;
+            Time.fixedDeltaTime = 1 / 120f; Physics.gravity = new Vector3(0, -CarController.G, 0); Physics.defaultSolverIterations = 8; Physics.queriesHitBackfaces = true; // belt and braces: wheel rays see every mesh-collider face
             Screen.sleepTimeout = SleepTimeout.NeverSleep; Input.multiTouchEnabled = true;
             Lib.Init(); UIKit.Init();
 
