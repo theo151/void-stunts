@@ -1,6 +1,6 @@
 # Void Stunts (iOS) · v0.10
 
-Unity 6.3 LTS · URP 17 (Forward+) · Metal · built in the cloud and shipped through TestFlight. Setup is in **SETUP.md**.
+Unity 6.3 LTS (6000.3.29f1) · URP 17 (Forward+) · Metal · built in the cloud and shipped through TestFlight. Setup is in **SETUP.md**.
 
 Everything is generated in code at load time: levels, car, UI and synth audio. The scene is empty, and `Game.Boot` builds the rest.
 

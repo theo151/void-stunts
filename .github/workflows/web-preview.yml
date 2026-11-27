@@ -33,13 +33,13 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: Library
-          key: library-webgl-${{ hashFiles('Packages/manifest.json', 'ProjectSettings/ProjectVersion.txt') }}-${{ hashFiles('Assets/Resources/**', 'Assets/Scripts/**', 'Assets/Editor/**') }}
+          key: library-webgl-${{ hashFiles('Packages/manifest.json', 'ProjectSettings/ProjectVersion.txt', '.github/workflows/*.yml') }}-${{ hashFiles('Assets/Resources/**', 'Assets/Scripts/**', 'Assets/Editor/**') }}
           restore-keys: |
             library-webgl-
 
       - uses: buildalon/unity-setup@v2
         with:
-          version-file: ProjectSettings/ProjectVersion.txt
+          unity-version: 6000.3.29f1   # pinned here: version-file needs a changeset line that ProjectVersion.txt lacks
           build-targets: WebGL
 
       - uses: buildalon/activate-unity-license@v2
