@@ -43,19 +43,19 @@ jobs:
           restore-keys: |
             library-webgl-
 
-      - uses: buildalon/unity-setup@v2
+      - uses: buildalon/unity-setup@v3
         with:
-          unity-version: 6000.3.29f1   # must match ProjectSettings/ProjectVersion.txt
+          unity-version: 6000.3.29f1 (96d2fe17529c)   # must match ProjectSettings/ProjectVersion.txt
           build-targets: WebGL
           architecture: arm64
 
-      - uses: buildalon/activate-unity-license@v2
+      - uses: buildalon/activate-unity-license@v3
         with:
-          license: Personal
+          license: personal
           username: ${{ secrets.UNITY_USERNAME }}
           password: ${{ secrets.UNITY_PASSWORD }}
 
-      - uses: buildalon/unity-action@v3
+      - uses: buildalon/unity-action@v4
         with:
           build-target: WebGL
           log-name: webgl

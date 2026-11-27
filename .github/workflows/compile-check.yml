@@ -13,17 +13,17 @@ jobs:
         with:
           path: Library
           key: library-check-${{ hashFiles('Packages/manifest.json', 'ProjectSettings/ProjectVersion.txt') }}
-      - uses: buildalon/unity-setup@v2
+      - uses: buildalon/unity-setup@v3
         with:
-          unity-version: 6000.3.29f1   # must match ProjectSettings/ProjectVersion.txt
+          unity-version: 6000.3.29f1 (96d2fe17529c)   # must match ProjectSettings/ProjectVersion.txt
           build-targets: iOS
           cache-installation: true
-      - uses: buildalon/activate-unity-license@v2
+      - uses: buildalon/activate-unity-license@v3
         with:
-          license: Personal
+          license: personal
           username: ${{ secrets.UNITY_USERNAME }}
           password: ${{ secrets.UNITY_PASSWORD }}
-      - uses: buildalon/unity-action@v3
+      - uses: buildalon/unity-action@v4
         with:
           build-target: iOS
           log-name: compile-check
