@@ -42,13 +42,13 @@ VSHexSample VSHexTile(TEXTURE2D_PARAM(tA, sA), TEXTURE2D_PARAM(tN, sN), TEXTURE2
     float3 Lw = float3(0.299, 0.587, 0.114);
     float3 Dw = float3(dot(a1, Lw), dot(a2, Lw), dot(a3, Lw));
     Dw = lerp(1.0, Dw, contrast);
-    float3 W = Dw * pow(float3(w1, w2, w3), 7.0);
+    float3 W = Dw * pow(float3(w1, w2, w3), 4.0); // softer seams: no hard-edged cells
     W /= (W.x + W.y + W.z);
     VSHexSample o;
     o.albedo = W.x * a1 + W.y * a2 + W.z * a3;
-    float3 n1 = SAMPLE_TEXTURE2D_GRAD(tN, sN, u1, mul(dx, r1), mul(dy, r1)).rgb * 2 - 1;
-    float3 n2 = SAMPLE_TEXTURE2D_GRAD(tN, sN, u2, mul(dx, r2), mul(dy, r2)).rgb * 2 - 1;
-    float3 n3 = SAMPLE_TEXTURE2D_GRAD(tN, sN, u3, mul(dx, r3), mul(dy, r3)).rgb * 2 - 1;
+    float3 n1 = UnpackNormal(SAMPLE_TEXTURE2D_GRAD(tN, sN, u1, mul(dx, r1), mul(dy, r1)));
+    float3 n2 = UnpackNormal(SAMPLE_TEXTURE2D_GRAD(tN, sN, u2, mul(dx, r2), mul(dy, r2)));
+    float3 n3 = UnpackNormal(SAMPLE_TEXTURE2D_GRAD(tN, sN, u3, mul(dx, r3), mul(dy, r3)));
     n1.xy = mul(r1, n1.xy); n2.xy = mul(r2, n2.xy); n3.xy = mul(r3, n3.xy);
     o.normalTS = normalize(W.x * n1 + W.y * n2 + W.z * n3);
     o.mask = W.x * SAMPLE_TEXTURE2D_GRAD(tM, sM, u1, mul(dx, r1), mul(dy, r1)).rgb

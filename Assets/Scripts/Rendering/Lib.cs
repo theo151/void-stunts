@@ -94,7 +94,7 @@ namespace VoidStunts
             m.SetTexture("_NoiseMap", Noise);
             m.SetColor("_BaseColor", tint); m.SetFloat("_Tiling", tiling); m.SetFloat("_Hex", hex && set != null ? 1 : 0);
             m.SetFloat("_Macro", macro); m.SetFloat("_Rough", rough); m.SetFloat("_Metal", metal); m.SetFloat("_Grime", grime);
-            m.SetFloat("_HexContrast", .6f); m.SetFloat("_NormalStrength", 1); m.SetFloat("_Cull", 2);
+            m.SetFloat("_HexContrast", .35f); m.SetFloat("_NormalStrength", 1); m.SetFloat("_Cull", 2);
             return m;
         }
         public static Material Solid(Color c, float rough, float metal)

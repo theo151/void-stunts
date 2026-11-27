@@ -77,6 +77,12 @@ namespace VoidStunts
             yield return new WaitForFixedUpdate();
             ui.Loading(false); done?.Invoke();
         }
+        public void SelectLevel(int i)
+        {
+            if (state != State.Menu) return;
+            Settings.level = i; Settings.Save(); ui.RefreshMenu();
+            StartCoroutine(LoadLevel(Settings.level, () => ToMenu()));
+        }
         public void CycleLevel(int d)
         {
             if (state != State.Menu) return;

@@ -11,6 +11,7 @@ namespace VoidStunts
         public static readonly Color Paper = new(.957f, .953f, .937f, .86f), Ink = new(.071f, .075f, .078f, 1), InkSoft = new(.071f, .075f, .078f, .55f),
             Volt = new(.831f, 1, 0, 1), Red = new(1, .1f, .1f, 1), White = new(.97f, .965f, .95f, 1), Glass = new(.07f, .075f, .08f, .5f);
         static Sprite pill, round, dot, ring;
+        public static Sprite PillSprite => pill; public static Sprite CardSprite => round; public static Sprite DotSprite => dot; public static Sprite RingSprite => ring;
 
         public static void Init()
         {
@@ -40,7 +41,7 @@ namespace VoidStunts
         {
             var go = new GameObject("UI", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster)); go.transform.SetParent(parent, false);
             var c = go.GetComponent<Canvas>(); c.renderMode = RenderMode.ScreenSpaceOverlay; c.sortingOrder = 10;
-            var sc = go.GetComponent<CanvasScaler>(); sc.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize; sc.scaleFactor = 1 / TouchInput.PointsPerPixel; // 1 unit = 1 iOS point
+            var sc = go.GetComponent<CanvasScaler>(); sc.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize; sc.scaleFactor = UIScale.Factor; go.AddComponent<UIScale>(); // 1 unit ≈ 1 iPhone point on any screen
             if (Object.FindFirstObjectByType<EventSystem>() == null) { var es = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule)); es.transform.SetParent(parent, false); }
             safe = Rect("Safe", go.transform); safe.gameObject.AddComponent<SafeArea>();
             return c;
@@ -90,6 +91,14 @@ namespace VoidStunts
             var tex = DotMatrix.Render(text, 8, Color.white, new Color(0, 0, 0, 0), false, false, 0); tex.filterMode = FilterMode.Bilinear; ri.texture = tex;
             ri.rectTransform.sizeDelta = new Vector2(height * tex.width / tex.height, height);
         }
+    }
+
+    /// <summary>One UI unit ≈ one iPhone point: the short side of the screen is treated as ~420 units, on phones, tablets and desktop browsers alike.</summary>
+    public class UIScale : MonoBehaviour
+    {
+        public static float Factor => Mathf.Clamp(Mathf.Min(Screen.width, Screen.height) / 420f, 1f, 4f);
+        CanvasScaler sc; void Awake() { sc = GetComponent<CanvasScaler>(); }
+        void Update() { if (sc != null && !Mathf.Approximately(sc.scaleFactor, Factor)) sc.scaleFactor = Factor; }
     }
 
     /// <summary>Keeps a RectTransform inside Screen.safeArea (notch, home indicator, rounded corners).</summary>

@@ -128,7 +128,7 @@ Shader "VoidStunts/Surface"
                 else
                 {
                     albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv).rgb;
-                    nTS = SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, uv).rgb * 2 - 1;
+                    nTS = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, uv)); // platform-correct decode (BC5/DXT5nm on desktop, RGB on mobile)
                     msk = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, uv).rgb;
                 }
                 // terrain: steep faces become rock (sampled at a second scale), flats keep the base layer
@@ -146,8 +146,8 @@ Shader "VoidStunts/Surface"
                 float4 n1 = SAMPLE_TEXTURE2D(_NoiseMap, sampler_NoiseMap, wp.xz * (1.0 / 160.0) + wp.y * 0.002);
                 float4 n2 = SAMPLE_TEXTURE2D(_NoiseMap, sampler_NoiseMap, float2(wp.x + wp.z * 0.31, wp.y + wp.z * 0.67) * (1.0 / 37.0));
                 float macro = (n1.r - 0.5) * 0.8 + (n2.g - 0.5) * 0.5 + (n1.b - 0.5) * 0.3;
-                albedo *= 1 + macro * 0.32 * _Macro;
-                albedo *= lerp(1, float3(1.05, 1.0, 0.93), (n1.g - 0.5) * 1.6 * _Macro);
+                albedo *= 1 + macro * 0.16 * _Macro;
+                albedo *= lerp(1, float3(1.03, 1.0, 0.96), (n1.g - 0.5) * 1.2 * _Macro);
                 float rough = saturate(msk.r * _Rough * (1 + (n2.b - 0.5) * 0.35 * _Macro));
                 float ao = msk.g * i.color.a;
                 float metal = _Metal;

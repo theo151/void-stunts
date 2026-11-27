@@ -63,7 +63,7 @@ Shader "VoidStunts/Foliage"
                 clip(tex.a - _Cutoff);
                 float s = IS_FRONT_VFACE(face, 1, -1);
                 float3 nWS = normalize(i.normalWS) * s, t = normalize(i.tangentWS.xyz), b = cross(nWS, t) * i.tangentWS.w;
-                float3 nTS = SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, i.uv).rgb * 2 - 1;
+                float3 nTS = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, i.uv));
                 float3 normalWS = normalize(TransformTangentToWorld(nTS, half3x3(t, b, nWS)));
                 float3 albedo = tex.rgb * _BaseColor.rgb * i.color.rgb;
                 InputData id = (InputData)0;
