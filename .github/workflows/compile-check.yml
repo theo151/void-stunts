@@ -1,0 +1,30 @@
+# Fast check on every pull request / manual run: imports the project and runs the configure step (no Xcode, no signing).
+name: Compile check
+on:
+  workflow_dispatch:
+  pull_request:
+jobs:
+  check:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: Library
+          key: library-check-${{ hashFiles('Packages/manifest.json', 'ProjectSettings/ProjectVersion.txt') }}
+      - uses: buildalon/unity-setup@v2
+        with:
+          version-file: ProjectSettings/ProjectVersion.txt
+          build-targets: iOS
+          cache-installation: true
+      - uses: buildalon/activate-unity-license@v2
+        with:
+          license: Personal
+          username: ${{ secrets.UNITY_USERNAME }}
+          password: ${{ secrets.UNITY_PASSWORD }}
+      - uses: buildalon/unity-action@v3
+        with:
+          build-target: iOS
+          log-name: compile-check
+          args: -quit -batchmode -nographics -executeMethod VoidStunts.EditorTools.BuildScript.Validate

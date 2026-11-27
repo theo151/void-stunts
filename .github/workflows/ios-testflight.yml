@@ -1,0 +1,91 @@
+# Cloud build → TestFlight. Runs on a GitHub-hosted Apple-silicon Mac: no Mac of your own needed.
+# Secrets (Settings → Secrets and variables → Actions → Secrets):
+#   UNITY_USERNAME, UNITY_PASSWORD                  your Unity ID (Personal licence is fine; the account must not use 2-step verification)
+#   APP_STORE_CONNECT_KEY                           the AuthKey_XXXX.p8 file, base64-encoded
+#   APP_STORE_CONNECT_KEY_ID, APP_STORE_CONNECT_ISSUER_ID, APPLE_TEAM_ID
+# Variables (same page → Variables):
+#   BUNDLE_ID      e.g. com.yourname.voidstunts  (must match the app you created in App Store Connect)
+#   TESTFLIGHT_GROUP  optional, an internal TestFlight group name to add each build to
+name: iOS → TestFlight
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['Assets/**', 'Packages/**', 'ProjectSettings/**', '.github/workflows/ios-testflight.yml']
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # Skipped until you have joined the Apple Developer Program: then set the repo variable APPLE_READY = true
+    if: vars.APPLE_READY == 'true'
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      BUNDLE_ID: ${{ vars.BUNDLE_ID }}
+      BUILD_NUMBER: ${{ github.run_number }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      OUTPUT: Builds/iOS
+    steps:
+      - name: Free disk space
+        run: |
+          df -h /
+          sudo rm -rf ~/Library/Android/sdk /usr/local/share/dotnet /usr/local/lib/node_modules ~/.dotnet ~/.rustup ~/.ghcup || true
+          xcrun simctl delete all || true
+          sudo rm -rf ~/Library/Developer/CoreSimulator/Caches || true
+          df -h /
+
+      - uses: actions/checkout@v4
+
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: library-ios-${{ hashFiles('Packages/manifest.json', 'ProjectSettings/ProjectVersion.txt') }}-${{ hashFiles('Assets/Resources/**', 'Assets/Scripts/**', 'Assets/Editor/**') }}
+          restore-keys: |
+            library-ios-${{ hashFiles('Packages/manifest.json', 'ProjectSettings/ProjectVersion.txt') }}-
+            library-ios-
+
+      - uses: buildalon/unity-setup@v2
+        with:
+          version-file: ProjectSettings/ProjectVersion.txt
+          build-targets: iOS
+          cache-installation: true
+
+      - uses: buildalon/activate-unity-license@v2
+        with:
+          license: Personal
+          username: ${{ secrets.UNITY_USERNAME }}
+          password: ${{ secrets.UNITY_PASSWORD }}
+
+      - name: Unity → Xcode project
+        uses: buildalon/unity-action@v3
+        with:
+          build-target: iOS
+          log-name: ios-export
+          args: -quit -batchmode -nographics -executeMethod VoidStunts.EditorTools.BuildScript.BuildIOS
+
+      - name: Xcode → archive → TestFlight
+        uses: buildalon/unity-xcode-builder@v1
+        with:
+          project-path: ${{ github.workspace }}/Builds/iOS
+          app-store-connect-key: ${{ secrets.APP_STORE_CONNECT_KEY }}
+          app-store-connect-key-id: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          app-store-connect-issuer-id: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          team-id: ${{ secrets.APPLE_TEAM_ID }}
+          bundle-id: ${{ vars.BUNDLE_ID }}
+          export-option: app-store-connect
+          test-groups: ${{ vars.TESTFLIGHT_GROUP }}
+
+      - name: Keep the Unity log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-logs
+          path: |
+            **/Logs/*.log
+            ${{ runner.temp }}/**/*.log
+          if-no-files-found: ignore
